@@ -2,6 +2,15 @@ name: SSSB sniper
 
 on:
   workflow_dispatch:
+    inputs:
+      test_webhook:
+        description: "Send Discord webhook test message before checking SSSB"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
   schedule:
     # GitHub cron is UTC. In Polish summer time, 14:00 UTC = 16:00 Warsaw.
     # Normal weekday sweep: catches surprise publications on all weekdays.
@@ -33,6 +42,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Test Discord webhook
+        if: github.event_name == 'workflow_dispatch' && inputs.test_webhook == 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SSSB_SEARCH_URL: https://minasidor.sssb.se/en/available-apartments/?actionId=&omraden=&oboTyper=&hyraMax=
+          MIN_MOVE_IN: "2026-08-01"
+          DATE_MODE: on_or_after
+        run: python sssb_sniper.py --test-webhook
 
       - name: Check SSSB
         env:

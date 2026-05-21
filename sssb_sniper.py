@@ -357,6 +357,25 @@ def post_discord(webhook_url: str, listing: dict[str, Any], timeout_seconds: int
             raise RuntimeError(f"Discord webhook zwrocil HTTP {response.status}")
 
 
+def send_test_webhook(config: Config) -> None:
+    if not config.discord_webhook_url:
+        raise SystemExit("Brakuje DISCORD_WEBHOOK_URL w .env albo GitHub Secrets")
+
+    test_listing = {
+        "title": "SSSB sniper test",
+        "url": config.search_url,
+        "area": "Webhook check",
+        "address": "GitHub Actions",
+        "move_in": config.min_move_in.isoformat(),
+        "rent": "test message",
+        "space": "",
+        "queue": "",
+        "floor": "",
+    }
+    post_discord(config.discord_webhook_url, test_listing, config.timeout_seconds)
+    print("Discord webhook dziala: wyslano wiadomosc testowa.")
+
+
 def fetch_listings(config: Config) -> list[dict[str, Any]]:
     listings: list[dict[str, Any]] = []
     seen_keys: set[str] = set()
@@ -421,9 +440,18 @@ def main() -> int:
     parser.add_argument("--once", action="store_true", help="Run one check and exit.")
     parser.add_argument("--dry-run", action="store_true", help="Do not send Discord messages.")
     parser.add_argument("--debug", action="store_true", help="Print extra diagnostics.")
+    parser.add_argument("--test-webhook", action="store_true", help="Send a Discord test message and exit.")
     args = parser.parse_args()
 
     config = load_config()
+
+    if args.test_webhook:
+        try:
+            send_test_webhook(config)
+            return 0
+        except (urllib.error.URLError, TimeoutError, RuntimeError, ValueError) as exc:
+            print(f"Blad testu webhooka: {exc}", file=sys.stderr)
+            return 1
 
     if args.once:
         try:
