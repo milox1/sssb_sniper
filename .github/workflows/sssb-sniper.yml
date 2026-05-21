@@ -1,0 +1,58 @@
+name: SSSB sniper
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub cron is UTC. In Polish summer time, 14:00 UTC = 16:00 Warsaw.
+    # Normal weekday sweep: catches surprise publications on all weekdays.
+    - cron: "*/15 6-18 * * 1-5"
+    # SSSB's usual Monday publication window: 15:55-16:20 Warsaw in summer time.
+    - cron: "55 13 * * 1"
+    - cron: "0,5,10,15,20 14 * * 1"
+    # SSSB's usual Thursday publication window: 09:55-10:20 Warsaw in summer time.
+    - cron: "55 7 * * 4"
+    - cron: "0,5,10,15,20 8 * * 4"
+    # SSSB says summer publications can also happen on Wednesdays and Fridays.
+    - cron: "*/5 8-16 * 6-8 3,5"
+
+concurrency:
+  group: sssb-sniper
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check SSSB
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SSSB_SEARCH_URL: https://minasidor.sssb.se/en/available-apartments/?actionId=&omraden=&oboTyper=&hyraMax=
+          MIN_MOVE_IN: "2026-08-01"
+          DATE_MODE: on_or_after
+          SEND_ON_FIRST_RUN: "false"
+          STATE_PATH: .sssb_seen.json
+          MAX_PAGES: "1"
+        run: python sssb_sniper.py --once
+
+      - name: Save seen listings
+        run: |
+          if [ ! -f .sssb_seen.json ]; then
+            echo "No seen listings file to save."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .sssb_seen.json
+          git diff --cached --quiet || git commit -m "Update SSSB seen listings"
+          git push
