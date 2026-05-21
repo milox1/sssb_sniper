@@ -328,7 +328,8 @@ def discord_payload(listing: dict[str, Any]) -> dict[str, Any]:
         ("Floor", listing["floor"]),
     ]
     return {
-        "content": "@here Nowe ogloszenie SSSB pasuje do filtra.",
+        "content": "@everyone Nowe ogloszenie SSSB pasuje do filtra.",
+        "allowed_mentions": {"parse": ["everyone"]},
         "embeds": [
             {
                 "title": listing["title"],
