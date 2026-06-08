@@ -431,7 +431,7 @@ def run_once(config: Config, dry_run: bool = False, debug: bool = False) -> int:
         print("Brak nowych pasujacych ogloszen.")
 
     seen.update(item["key"] for item in matches)
-    if not dry_run and seen != original_seen:
+    if not dry_run and (seen != original_seen or not state_existed):
         save_seen(config.state_path, seen)
     return len(new_matches)
 

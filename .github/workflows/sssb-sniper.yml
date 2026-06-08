@@ -58,7 +58,7 @@ jobs:
           SSSB_SEARCH_URL: https://minasidor.sssb.se/en/available-apartments/?actionId=&omraden=&oboTyper=&hyraMax=
           MIN_MOVE_IN: "2026-08-01"
           DATE_MODE: on_or_after
-          SEND_ON_FIRST_RUN: "false"
+          SEND_ON_FIRST_RUN: "true"
           STATE_PATH: .sssb_seen.json
           MAX_PAGES: "1"
         run: python sssb_sniper.py --once
